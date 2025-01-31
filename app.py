@@ -4,7 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 import os
 from datetime import datetime
-
+from werkzeug.utils import quote as url_quote
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 6
