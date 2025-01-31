@@ -16,42 +16,21 @@ class Screener:
     def __init__(self, headers):
         self.headers = headers
 
-    def search_companies(self, query):
-        search_url = f"https://www.screener.in/api/company/search/?q={query}&v={len(query)}&fts=1"
-        try:
-            response = requests.get(search_url)
-            response.raise_for_status()
-            data = response.json()
-            if isinstance(data, list):
-                return [company for company in data if company.get('id') is not None]
-            return []
-        except Exception as e:
-            print(f"Error searching companies: {e}")
-            return []
-
-    def fetch_company_page(self, company_url):
-        base_url = "https://www.screener.in"
-        full_url = base_url + company_url
-        try:
-            response = requests.get(full_url)
-            response.raise_for_status()
-            return response.text
-        except Exception as e:
-            print(f"Error fetching company page: {e}")
-            return None
-
-    def extract_data(self, html_content, section_id):
-        if not html_content:
-            return {}
-            
+def extract_data(self, html_content, section_id):
+    if not html_content:
+        return {}
+        
+    try:
         soup = BeautifulSoup(html_content, 'html.parser')
         section = soup.find('section', id=section_id, class_='card card-large')
         
         if not section:
+            print(f"Section {section_id} not found")
             return {}
             
         table = section.find('table', class_='data-table')
         if not table:
+            print(f"No data table found for section {section_id}")
             return {}
             
         headers = [th.text.strip() for th in table.find('thead').find_all('th')]
@@ -59,12 +38,16 @@ class Screener:
         
         for row in table.find('tbody').find_all('tr'):
             cells = row.find_all('td')
-            row_data = {headers[0]: cells[0].text.strip()}
-            for header, cell in zip(headers[1:], cells[1:]):
-                row_data[header] = cell.text.strip()
-            data.append(row_data)
+            if len(cells) == len(headers):
+                row_data = {headers[0]: cells[0].text.strip()}
+                for header, cell in zip(headers[1:], cells[1:]):
+                    row_data[header] = cell.text.strip()
+                data.append(row_data)
             
         return data
+    except Exception as e:
+        print(f"Error extracting data for {section_id}: {e}")
+        return {}
 
 class Company:
     def __init__(self, name, url):
@@ -85,6 +68,7 @@ class Company:
         return None
 
 @app.route('/api/stock-data', methods=['POST'])
+@app.route('/api/stock-data', methods=['POST'])
 def get_stock_data():
     try:
         data = request.get_json()
@@ -93,11 +77,16 @@ def get_stock_data():
         if not stock_name:
             return jsonify({'error': 'Stock name is required'}), 400
 
-        # Initialize screener
+        # Search for the company first
         screener = Screener(HEADERS)
+        search_results = screener.search_companies(stock_name)
         
-        # Create company instance
-        company = Company(stock_name, f"/company/{stock_name}/")
+        if not search_results:
+            return jsonify({'error': 'No company found with the given name'}), 404
+        
+        # Use the first matching company
+        first_company = search_results[0]
+        company = Company(first_company['name'], f"/company/{first_company['code']}/")
         
         # Fetch all data
         result = company.fetch_all_data(screener)
@@ -105,7 +94,7 @@ def get_stock_data():
         if result:
             # Add metadata
             response_data = {
-                'stock_name': stock_name,
+                'stock_name': company.name,
                 'extraction_date': datetime.now().isoformat(),
                 'data': result
             }
