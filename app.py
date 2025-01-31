@@ -6,8 +6,13 @@ import os
 from datetime import datetime
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
-
+CORS(app, resources={
+    r"/api/*": {
+        "origins": ["http://localhost:5173"],  # Add your React app's URL
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+})
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (X11; Windows; Windows x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.114 Safari/537.36'
 }
