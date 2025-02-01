@@ -8,42 +8,20 @@ from datetime import datetime
 from typing import Dict, List, Optional
 
 app = Flask(__name__)
-
-# Get allowed origins from environment variable or use defaults
-ALLOWED_ORIGINS = os.environ.get('ALLOWED_ORIGINS', 'http://localhost:5173,https://stockpro-seven.vercel.app').split(',')
-
-# Updated CORS configuration
 CORS(app, resources={
     r"/api/*": {
-        "origins": ALLOWED_ORIGINS,
+        "origins": ["http://localhost:5173"],  # Add your React app's URL
         "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization", "Accept"],
-        "supports_credentials": True
+        "allow_headers": ["Content-Type", "Authorization"]
     }
 })
-
-# Add security headers middleware
-@app.after_request
-def add_security_headers(response):
-    response.headers['Access-Control-Allow-Origin'] = request.headers.get('Origin', '*')
-    response.headers['Access-Control-Allow-Credentials'] = 'true'
-    response.headers['Cross-Origin-Opener-Policy'] = 'same-origin-allow-popups'
-    response.headers['Cross-Origin-Resource-Policy'] = 'cross-origin'
-    
-    # Handle preflight requests
-    if request.method == 'OPTIONS':
-        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, Accept'
-        response.headers['Access-Control-Max-Age'] = '3600'
-    
-    return response
 
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (X11; Windows; Windows x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.114 Safari/537.36'
 }
 
 class RobustScreenerScraper:
-    def _init_(self, headers=None):
+    def __init__(self, headers=None):
         self.headers = headers or HEADERS
         self.user_agents = [
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
