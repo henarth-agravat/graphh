@@ -7,7 +7,7 @@ import re
 from datetime import datetime
 from typing import Dict, List, Optional
 
-app = Flask(_name_)
+app = Flask(__name__)
 
 # Get allowed origins from environment variable or use defaults
 ALLOWED_ORIGINS = os.environ.get('ALLOWED_ORIGINS', 'http://localhost:5173,https://stockpro-seven.vercel.app').split(',')
